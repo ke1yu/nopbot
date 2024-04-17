@@ -1,4 +1,7 @@
 import discord
+from discord.client import Client
+from discord.ext import commands
+from discord.ext import tasks
 from discord import app_commands
 import topgg
 import dataclasses
@@ -26,10 +29,10 @@ embed_help = {
   Lang.EN : EmbedHelp(Lang.EN)
 }
 
-class MyClient(discord.Client):
+class MyClient(Client):
   def __init__(self, *, intents: discord.Intents):
     activity = discord.Game(name="/helpnop")
-    super().__init__(intents=intents, activity=activity, status=discord.Status.online)
+    super().__init__(command_prefix = "/", intents=intents, activity=activity, status=discord.Status.online)
     self.tree = app_commands.CommandTree(self)
 
   async def setup_hook(self):
@@ -38,16 +41,16 @@ class MyClient(discord.Client):
     # guild_count = len(client.guilds)
     # f文字列(フォーマット済み文字列リテラル)は、Python3.6からの機能です。
     # game = discord.Game(f'{guild_count} servers')
-    for g in self.guilds:
-      g_id = str(g.id)
-      if db[DB_SETTING].get(g_id, 'NO') == 'NO':
-        db[DB_SETTING][g_id] = default_dict
-      for key in database_keys.values():
-        if db[DB_SETTING][g_id].get(key, 'NO') == 'NO':
-          db[DB_SETTING][g_id][key] = default_dict[key]
     # self.tree.copy_global_to(guild=MY_GUILD)
+    # await self.tree.clear_commands()
+    # call_update_database.start()
     dbl_token = os.environ['DBL_TOKEN']
-    self.topggpy = topgg.DBLClient(client, dbl_token, autopost=True, post_shard_count=True)
+    self.topggpy = topgg.DBLClient(
+      self,
+      dbl_token,
+      autopost=True,
+      post_shard_count=True
+    )
     await self.tree.sync()
 
 intents = discord.Intents.default()
@@ -55,7 +58,9 @@ intents.members = True
 intents.guilds = True
 # intents.message_content = True
 client = MyClient(intents=intents)
-
+# dbl_token = os.environ['DBL_TOKEN']
+# client.topggpy = topgg.DBLClient(client, dbl_token, autopost=True, post_shard_count=True)
+      
 @client.event
 async def on_voice_state_update(member, before, after):
   g_id = str(member.guild.id)
@@ -112,7 +117,7 @@ async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
       db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_MEMBER].append(i_user_id)
     await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, interaction.user.id, 'OFF'), ephemeral=True)
 
-@client.tree.command(name="vcnoticenop", description="Enter ID of the voice channel to turn notifications on/off.")
+@client.tree.command(name="vcnoticenop", description="Enter ID of the voice or stage channel to turn notifications on/off.")
 @app_commands.choices(on_off=[
   app_commands.Choice(name="On", value="on"),
   app_commands.Choice(name="Off", value="off")
@@ -124,7 +129,7 @@ async def vc_notice_command(interaction, on_off: app_commands.Choice[str], chann
   if interaction.permissions.administrator:
     if channel_id.isdecimal():
       channel_id = int(channel_id)
-      ch = [ch for ch in interaction.guild.voice_channels if ch.id == channel_id]
+      ch = [ch for ch in interaction.guild.voice_channels + interaction.guild.stage_channels if ch.id == channel_id]
       if ch:
         ch = ch[0]
         if on_off.value == 'on':
@@ -192,8 +197,7 @@ async def help_command(interaction):
   g_id = str(interaction.guild_id)
   lang = db[DB_SETTING][g_id][Db_Keys.LANGUAGE]
   await interaction.response.send_message(embed=embed_help[lang], ephemeral=True)
-
-
+  
 # @client.tree.command(name="countnop", description="Count the number of servers where this bot is installed.")
 # async def count_command(interaction):
 #   await interaction.response.send_message(str(len(client.guilds)) + " servers", ephemeral=True)
@@ -221,6 +225,33 @@ async def on_autopost_success():
   print(
       f"Posted server count ({client.topggpy.guild_count}), shard count ({client.shard_count})"
   )
+
+@client.event
+async def on_autopost_error(exception):
+  print(
+    f"Server count error due to {exception}"
+  )
+
+async def update_database():
+  print("Update started")
+  for g in client.guilds:
+    g_id = str(g.id)
+    if db[DB_SETTING].get(g_id, 'NO') == 'NO':
+      print(g_id)
+      db[DB_SETTING][g_id] = default_dict
+    for key in database_keys.values():
+      if db[DB_SETTING][g_id].get(key, 'NO') == 'NO':
+        db[DB_SETTING][g_id][key] = default_dict[key]
+  print("Database updated")
+
+@tasks.loop(minutes = 10)
+async def call_update_database():
+  await update_database()
+
+# @call_update_database.before_loop
+# async def before_call_update_database():
+#   print('waiting...')
+#   await client.wait_until_ready()
 
 keep_alive()
 my_secret = os.environ['DISCORD_TOKEN']

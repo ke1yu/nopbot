@@ -13,16 +13,17 @@ class Db_Keys:
   NAME_NOTICE = "name_notice"
   LANGUAGE = "language"
 
-  
+
 # language
 @dataclasses.dataclass(frozen=True)
 class Lang:
   JP = "jp"
   EN = "en"
-  
+
 # string dict keys
 @dataclasses.dataclass(frozen=True)
 class Str_Dict_Keys:
+  DEFAULT = "__default__"
   ALERT = "alert"
   ALERT_NAME_JOIN = "alert_name_join"
   ALERT_NAME_LEAVE = "alert_name_leave"

@@ -6,8 +6,8 @@ from discord import app_commands
 import topgg
 import dataclasses
 import os
+import copy
 from replit import db
-# from datetime import datetime, timedelta
 from constants import DB_SETTING, Db_Keys, Lang, Str_Dict_Keys
 from lingual import get_locale
 from help import EmbedHelp
@@ -19,7 +19,7 @@ database_keys = dataclasses.asdict(database_keys)
 default_dict = {
   Db_Keys.NO_NOTICE_MEMBER: [],
   Db_Keys.NO_NOTICE_VC: [],
-  Db_Keys.ALERT_CHANNEL: None,
+  Db_Keys.ALERT_CHANNEL: {},
   Db_Keys.NAME_NOTICE: True,
   Db_Keys.LANGUAGE: Lang.EN,
 }
@@ -32,18 +32,10 @@ embed_help = {
 class MyClient(Client):
   def __init__(self, *, intents: discord.Intents):
     activity = discord.Game(name="/helpnop")
-    super().__init__(command_prefix = "/", intents=intents, activity=activity, status=discord.Status.online)
+    super().__init__(intents=intents, activity=activity, status=discord.Status.online)
     self.tree = app_commands.CommandTree(self)
 
   async def setup_hook(self):
-    # This copies the global commands over to your guild.
-    # サーバー数
-    # guild_count = len(client.guilds)
-    # f文字列(フォーマット済み文字列リテラル)は、Python3.6からの機能です。
-    # game = discord.Game(f'{guild_count} servers')
-    # self.tree.copy_global_to(guild=MY_GUILD)
-    # await self.tree.clear_commands()
-    # call_update_database.start()
     dbl_token = os.environ['DBL_TOKEN']
     self.topggpy = topgg.DBLClient(
       self,
@@ -56,45 +48,44 @@ class MyClient(Client):
 intents = discord.Intents.default()
 intents.members = True
 intents.guilds = True
-# intents.message_content = True
 client = MyClient(intents=intents)
-# dbl_token = os.environ['DBL_TOKEN']
-# client.topggpy = topgg.DBLClient(client, dbl_token, autopost=True, post_shard_count=True)
-      
+
 @client.event
 async def on_voice_state_update(member, before, after):
   g_id = str(member.guild.id)
   g = db[DB_SETTING][g_id]
   if member:
-    if member.id not in g[Db_Keys.NO_NOTICE_MEMBER]:
+    if str(member.id) not in g[Db_Keys.NO_NOTICE_MEMBER]:
       lang = g[Db_Keys.LANGUAGE]
       name_notice = g[Db_Keys.NAME_NOTICE]
-      if g[Db_Keys.ALERT_CHANNEL] == None:
-        alert_channel = member.guild.system_channel
-      else:
-        alert_channel = [
-          ch for ch in member.guild.text_channels
-          if ch.id == g[Db_Keys.ALERT_CHANNEL]
-        ]
-        if alert_channel:
-          alert_channel = alert_channel[0]
-        else:
-          alert_channel = member.guild.system_channel
-    
+
       if (before.channel != after.channel):
         if after.channel:
-          if name_notice:
-            msg = get_locale(lang, Str_Dict_Keys.ALERT_NAME_JOIN, member.display_name, after.channel.name, len(after.channel.members))
-          else:
-            msg = get_locale(lang, Str_Dict_Keys.ALERT, after.channel.name, len(after.channel.members))
-          if after.channel.id not in g[Db_Keys.NO_NOTICE_VC]:
+          # JOIN
+          channel = after.channel
+          channel_id = str(channel.id)
+          if str(member.id) not in g[Db_Keys.NO_NOTICE_MEMBER] and channel_id not in g[Db_Keys.NO_NOTICE_VC]:
+            alert_channel = member.guild.system_channel or member.guild.text_channels[0]
+            if channel_id in g[Db_Keys.ALERT_CHANNEL]:
+              alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == g[Db_Keys.ALERT_CHANNEL][channel_id]]
+              if alert_channel_list:
+                alert_channel = alert_channel_list[0]
+            msg = get_locale(lang, Str_Dict_Keys.ALERT_NAME_JOIN if name_notice else Str_Dict_Keys.ALERT,
+                             member.display_name, channel.name, len(channel.members))
             await alert_channel.send(msg)
-        else:
-          if name_notice:
-            msg = get_locale(lang, Str_Dict_Keys.ALERT_NAME_LEAVE, member.display_name, before.channel.name, len(before.channel.members))
-          else:
-            msg = get_locale(lang, Str_Dict_Keys.ALERT, before.channel.name, len(before.channel.members))
-          if before.channel.id not in g[Db_Keys.NO_NOTICE_VC]:
+
+        elif before.channel:
+          # LEAVE
+          channel = before.channel
+          channel_id = str(channel.id)
+          if str(member.id) not in g[Db_Keys.NO_NOTICE_MEMBER] and channel_id not in g[Db_Keys.NO_NOTICE_VC]:
+            alert_channel = member.guild.system_channel
+            if channel_id in g[Db_Keys.ALERT_CHANNEL]:
+              alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == g[Db_Keys.ALERT_CHANNEL][channel_id]]
+              if alert_channel_list:
+                alert_channel = alert_channel_list[0]
+            msg = get_locale(lang, Str_Dict_Keys.ALERT_NAME_LEAVE if name_notice else Str_Dict_Keys.ALERT,
+                             member.display_name, channel.name, len(channel.members))
             await alert_channel.send(msg)
 
 
@@ -107,56 +98,77 @@ async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
   g = db[DB_SETTING][g_id]
   lang = g[Db_Keys.LANGUAGE]
-  i_user_id = interaction.user.id
+  i_user_id = str(interaction.user.id)
   if on_off.value == 'on':
     if i_user_id in g[Db_Keys.NO_NOTICE_MEMBER]:
       db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_MEMBER].remove(i_user_id)
-    await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, interaction.user.id, 'ON'), ephemeral=True)
+    await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, 'ON'), ephemeral=True)
   elif on_off.value == 'off':
     if i_user_id not in g[Db_Keys.NO_NOTICE_MEMBER]:
       db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_MEMBER].append(i_user_id)
-    await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, interaction.user.id, 'OFF'), ephemeral=True)
+    await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, 'OFF'), ephemeral=True)
 
-@client.tree.command(name="vcnoticenop", description="Enter ID of the voice or stage channel to turn notifications on/off.")
+
+@client.tree.command(name="vcnoticenop", description="Select the voice or stage channel to turn notifications on/off.")
 @app_commands.choices(on_off=[
   app_commands.Choice(name="On", value="on"),
   app_commands.Choice(name="Off", value="off")
 ])
-async def vc_notice_command(interaction, on_off: app_commands.Choice[str], channel_id : str):
+async def vc_notice_command(interaction, on_off: app_commands.Choice[str], channel: discord.VoiceChannel | discord.StageChannel):
   g_id = str(interaction.guild_id)
   g = db[DB_SETTING][g_id]
   lang = g[Db_Keys.LANGUAGE]
+
   if interaction.permissions.administrator:
-    if channel_id.isdecimal():
-      channel_id = int(channel_id)
-      ch = [ch for ch in interaction.guild.voice_channels + interaction.guild.stage_channels if ch.id == channel_id]
-      if ch:
-        ch = ch[0]
-        if on_off.value == 'on':
-          if channel_id in g[Db_Keys.NO_NOTICE_VC]:
-            db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_VC].remove(channel_id)
-          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, ch.name, 'ON'))
-        elif on_off.value == 'off':
-          if channel_id not in g[Db_Keys.NO_NOTICE_VC]:
-            db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_VC].append(channel_id)
-            await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, ch.name, 'OFF'))
-      else:
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_CHANNEL), ephemeral=True)
+    if channel:
+      channel_id = str(channel.id)
+      if on_off.value == 'on':
+        if channel_id in g[Db_Keys.NO_NOTICE_VC]:
+          db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_VC].remove(channel_id)
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, 'ON'))
+      elif on_off.value == 'off':
+        if channel_id not in g[Db_Keys.NO_NOTICE_VC]:
+          db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_VC].append(channel_id)
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, 'OFF'))
     else:
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOT_INTEGER), ephemeral=True)
+      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_CHANNEL), ephemeral=True)
   else:
     await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
 
-  
-@client.tree.command(name="sendherenop", description="Notifications will be on the text channel where this command is entered.")
-async def send_here_command(interaction):
+
+@client.tree.command(name="sendherenop", description="Notifications of selected VC will be on the text channel where this command is entered.")
+async def send_here_command(interaction, vc: str):
   g_id = str(interaction.guild_id)
   lang = db[DB_SETTING][g_id][Db_Keys.LANGUAGE]
+
   if interaction.permissions.administrator:
-    db[DB_SETTING][g_id][Db_Keys.ALERT_CHANNEL] = interaction.channel_id
-    await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, interaction.channel.name))
+    channel_id = str(interaction.channel_id)
+    if vc == Str_Dict_Keys.DEFAULT:
+      db[DB_SETTING][g_id][Db_Keys.ALERT_CHANNEL].clear()
+      db[DB_SETTING][g_id][Db_Keys.ALERT_CHANNEL][Str_Dict_Keys.DEFAULT] = channel_id
+      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, Str_Dict_Keys.DEFAULT)))
+    else:
+      db[DB_SETTING][g_id][Db_Keys.ALERT_CHANNEL][vc] = channel_id
+      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc)))
+
   else:
     await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
+
+
+@send_here_command.autocomplete("vc")
+async def autocomplete_vc(interaction: discord.Interaction, current: str):
+    g_id = str(interaction.guild_id)
+    lang = db[DB_SETTING][g_id][Db_Keys.LANGUAGE]
+
+    choices = [app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)]
+
+    if interaction.guild:
+      vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
+      for vc in vcs:
+          if current.lower() in vc.name.lower():
+              choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
+
+    return choices[:25]
 
 
 @client.tree.command(name="notifynamenop", description="Turn display of user names in notifications on/off.")
@@ -197,15 +209,11 @@ async def help_command(interaction):
   g_id = str(interaction.guild_id)
   lang = db[DB_SETTING][g_id][Db_Keys.LANGUAGE]
   await interaction.response.send_message(embed=embed_help[lang], ephemeral=True)
-  
-# @client.tree.command(name="countnop", description="Count the number of servers where this bot is installed.")
-# async def count_command(interaction):
-#   await interaction.response.send_message(str(len(client.guilds)) + " servers", ephemeral=True)
 
 
 @client.event
 async def on_guild_join(guild):
-  db[DB_SETTING][str(guild.id)] = default_dict
+  db[DB_SETTING][str(guild.id)] = copy.deepcopy(default_dict)
 
 @client.event
 async def on_guild_remove(guild):
@@ -217,8 +225,9 @@ async def on_guild_remove(guild):
 async def on_member_remove(member):
   if member:
     g_id = str(member.guild.id)
-    if member.id in db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_MEMBER]:
-      db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_MEMBER].remove(member.id)
+    member_id = str(member.id)
+    if member_id in db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_MEMBER]:
+      db[DB_SETTING][g_id][Db_Keys.NO_NOTICE_MEMBER].remove(member_id)
 
 @client.event
 async def on_autopost_success():
@@ -244,14 +253,10 @@ async def update_database():
         db[DB_SETTING][g_id][key] = default_dict[key]
   print("Database updated")
 
+
 @tasks.loop(minutes = 10)
 async def call_update_database():
   await update_database()
-
-# @call_update_database.before_loop
-# async def before_call_update_database():
-#   print('waiting...')
-#   await client.wait_until_ready()
 
 keep_alive()
 my_secret = os.environ['DISCORD_TOKEN']

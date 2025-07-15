@@ -1,11 +1,22 @@
-# from replit import db, Database
-# from constants import DB_SETTING, Db_Keys, Lang
-# import pickle
+from replit import db
+from constants import DB_SETTING, Db_Keys, Str_Dict_Keys
 
-# # db_url = 'https://kv.replit.com/v0/eyJhbGciOiJIUzUxMiIsImlzcyI6ImNvbm1hbiIsImtpZCI6InByb2Q6MSIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjb25tYW4iLCJleHAiOjE3MDE1OTIxOTYsImlhdCI6MTcwMTQ4MDU5NiwiZGF0YWJhc2VfaWQiOiI3OWZmMjE0Yy1mN2Y2LTQ5NDMtODJlZC1kMWRlNTI1NmNiYjAiLCJ1c2VyIjoia2UxeXUiLCJzbHVnIjoibm9wYm90In0.AGUML-ZtEB7vgf-OysP_0W2vMdn4WQ3nsfEcqNgZ0Ijo6Dx0mVqizU2OdakJkyjJ0uiDQyAGos5XhV8k_m3B5w'
-# # otherDB = Database(db_url)
-# # print(otherDB[DB_SETTING])
-# # db[DB_SETTING] = {}
-# # for key, value in otherDB[DB_SETTING].items():
-# #   db[DB_SETTING][key] = value
-# print(len(db[DB_SETTING]))
+print(db[DB_SETTING].keys())
+
+for key in db[DB_SETTING]:
+  guild_data = db[DB_SETTING][key]
+
+  # alert_channel: None または dictであることを想定
+  value = guild_data.get(Db_Keys.ALERT_CHANNEL)
+  if isinstance(value, int):
+    db[DB_SETTING][key][Db_Keys.ALERT_CHANNEL] = {Str_Dict_Keys.DEFAULT: str(value)}
+
+  # no_notice_vc: List[int] → List[str]
+  vc_list = guild_data.get(Db_Keys.NO_NOTICE_VC, [])
+  if isinstance(vc_list, list):
+    db[DB_SETTING][key][Db_Keys.NO_NOTICE_VC] = [str(vc) for vc in vc_list]
+
+  # no_notice_member: List[int] → List[str]
+  member_list = guild_data.get(Db_Keys.NO_NOTICE_MEMBER, [])
+  if isinstance(member_list, list):
+    db[DB_SETTING][key][Db_Keys.NO_NOTICE_MEMBER] = [str(member) for member in member_list]

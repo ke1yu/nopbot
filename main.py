@@ -7,7 +7,6 @@ import topgg
 import dataclasses
 import os
 import copy
-from replit import db
 from constants import DB_SETTING, Db_Keys, Lang, Str_Dict_Keys
 from lingual import get_locale
 from help import EmbedHelp

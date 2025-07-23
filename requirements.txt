@@ -1,0 +1,4 @@
+discord.py
+topgg
+psycopg2-binary
+python-dotenv

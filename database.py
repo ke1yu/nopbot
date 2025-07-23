@@ -1,22 +1,62 @@
-from replit import db
-from constants import DB_SETTING, Db_Keys, Str_Dict_Keys
+import psycopg
+import os
+from constants import DB_SETTING
 
-print(db[DB_SETTING].keys())
+class Database:
+	DATABASE_URL = os.environ.get("DATABASE_URL")
 
-for key in db[DB_SETTING]:
-  guild_data = db[DB_SETTING][key]
+	@classmethod
+	def select(cls, guild_id):
+		with psycopg.connect(cls.DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+			with conn.cursor() as cur:
+				cur.execute(
+					"SELECT FROM " + DB_SETTING + " WHERE guild_id = %s",
+					(guild_id)
+				)
 
-  # alert_channel: None または dictであることを想定
-  value = guild_data.get(Db_Keys.ALERT_CHANNEL)
-  if isinstance(value, int):
-    db[DB_SETTING][key][Db_Keys.ALERT_CHANNEL] = {Str_Dict_Keys.DEFAULT: str(value)}
+				result = cur.fetch_one()
+		
+		return result
 
-  # no_notice_vc: List[int] → List[str]
-  vc_list = guild_data.get(Db_Keys.NO_NOTICE_VC, [])
-  if isinstance(vc_list, list):
-    db[DB_SETTING][key][Db_Keys.NO_NOTICE_VC] = [str(vc) for vc in vc_list]
+	# @classmethod
+	# def select(cls, guild_id, col, val):
+	# 	with psycopg.connect(cls.DATABASE_URL, row_factory=psycopg.rows.dict_row) as conn:
+	# 		with conn.cursor() as cur:
+	# 			cur.execute(
+	# 				"SELECT FROM " + DB_SETTING + " WHERE guild_id = %s AND %s = %s",
+	# 				(guild_id, col, val)
+	# 			)
 
-  # no_notice_member: List[int] → List[str]
-  member_list = guild_data.get(Db_Keys.NO_NOTICE_MEMBER, [])
-  if isinstance(member_list, list):
-    db[DB_SETTING][key][Db_Keys.NO_NOTICE_MEMBER] = [str(member) for member in member_list]
+	# 			result = cur.fetch_one()
+		
+	# 	return result
+
+	@classmethod
+	def insert(cls, bean):
+		bean_tuple = bean.get_tuple()
+		percent_s = ", ".join(["%s"] * len(bean_tuple))
+
+		with psycopg.connect(cls.DATABASE_URL) as conn:
+			with conn.cursor() as cur:
+				cur.execute(
+					"INSERT INTO " + DB_SETTING + " VALUES (" + percent_s + ")",
+					bean_tuple
+				)
+	
+	@classmethod
+	def update(cls, guild_id, col, value):
+		with psycopg.connect(cls.DATABASE_URL) as conn:
+			with conn.cursor() as cur:
+				cur.execute(
+					"UPDATE " + DB_SETTING + " SET %s = ",
+					(guild_id)
+				)
+
+	@classmethod
+	def delete(cls, guild_id):
+		with psycopg.connect(cls.DATABASE_URL) as conn:
+			with conn.cursor() as cur:
+				cur.execute(
+					"DELETE * FROM " + DB_SETTING + " WHERE guild_id = %s",
+					(guild_id)
+				)

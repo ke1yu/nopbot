@@ -9,7 +9,7 @@ python = ">=3.12.0,<3.13"
 discord = "<2.3.2"
 topggpy = "<1.4.0"
 waitress = "<3.0.2"
-psycopg-binary = "<3.2.9"
+psycopg = "<3.2.9"
 
 [tool.pyright]
 # https://github.com/microsoft/pyright/blob/main/docs/configuration.md

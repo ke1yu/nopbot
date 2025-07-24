@@ -5,8 +5,7 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.10.0,<3.11"
-replit = "3.3.2"
+python = ">=3.10.0,<3.13"
 numpy = "1.26.2"
 discord = "2.3.2"
 topggpy = "1.4.0"

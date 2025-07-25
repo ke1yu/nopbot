@@ -7,7 +7,7 @@ class Bean:
 		self.guild_id = guild_id
 		self.no_notice_member = []
 		self.no_notice_vc = []
-		self.alert_channel = []
+		self.alert_channel = {}
 		self.name_notice = True
 		self.threshold = Num.MAX_THRESHOLD
 		self.language  = Lang.EN

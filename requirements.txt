@@ -7,4 +7,3 @@ aiohttp==3.9.3
 multidict>=6.0.0
 yarl>=1.7.0
 typing-extensions>=4.0.0
-asyncpg==0.26.0  # psycopg と連携する場合、asyncpg も考慮することがあります（PostgreSQL用非同期ライブラリ）

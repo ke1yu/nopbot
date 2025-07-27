@@ -40,6 +40,7 @@ client = MyClient(intents=intents)
 @client.event
 async def on_voice_state_update(member, before, after):
   g_id = str(member.guild.id)
+  update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -88,6 +89,7 @@ async def on_voice_state_update(member, before, after):
 ])
 async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
+  update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -119,6 +121,7 @@ async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
 ])
 async def vc_notice_command(interaction, on_off: app_commands.Choice[str], channel: discord.VoiceChannel | discord.StageChannel):
   g_id = str(interaction.guild_id)
+  update_database(g_id)
   
   try:
     g = Database.select(g_id)
@@ -151,6 +154,7 @@ async def vc_notice_command(interaction, on_off: app_commands.Choice[str], chann
 @client.tree.command(name="sendherenop", description="Notifications of selected VC will be on the text channel where this command is entered.")
 async def send_here_command(interaction, vc: str):
   g_id = str(interaction.guild_id)
+  update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -181,30 +185,29 @@ async def send_here_command(interaction, vc: str):
 
 @send_here_command.autocomplete("vc")
 async def autocomplete_vc(interaction: discord.Interaction, current: str):
-    g_id = str(interaction.guild_id)
+  g_id = str(interaction.guild_id)
+  update_database(g_id)
+  try:
+    g = Database.select(g_id)
+    
+    lang = g[Db_Keys.LANGUAGE]
 
-    try:
-      g = Database.select(g_id)
-      
-      lang = g[Db_Keys.LANGUAGE]
+    choices = [
+      app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.ALL), value=Str_Dict_Keys.ALL),
+      app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)
+    ]
 
-      choices = [
-        app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.ALL), value=Str_Dict_Keys.ALL),
-        app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)
-      ]
+    if interaction.guild:
+      vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
+      for vc in vcs:
+          if current.lower() in vc.name.lower():
+              choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
 
-      if interaction.guild:
-        vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
-        for vc in vcs:
-            if current.lower() in vc.name.lower():
-                choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
+  except psycopg2.ProgrammingError as e:
+    choices = []
+    print("autocomplete_vc", e)
 
-    except psycopg2.ProgrammingError as e:
-      choices = []
-      print("autocomplete_vc", e)
-
-    return choices[:25]
-
+  return choices[:25]
 
 @client.tree.command(name="notifynamenop", description="Turn display of user names in notifications on/off.")
 @app_commands.choices(display_name=[
@@ -213,6 +216,7 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
 ])
 async def notice_type_command(interaction, display_name: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
+  update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -241,6 +245,7 @@ async def notice_type_command(interaction, display_name: app_commands.Choice[str
 ])
 async def lang_command(interaction, language: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
+  update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -259,6 +264,7 @@ async def lang_command(interaction, language: app_commands.Choice[str]):
 @client.tree.command(name="helpnop", description="Display help.")
 async def help_command(interaction):
   g_id = str(interaction.guild_id)
+  update_database(g_id)
 
   try:
     lang = Database.select(g_id)[Db_Keys.LANGUAGE]
@@ -287,7 +293,8 @@ async def on_guild_remove(guild):
 async def on_member_remove(member):
   if member:
     g_id = str(member.guild.id)
-
+    update_database(g_id)
+    
     try:
       g = Database.select(g_id)
 
@@ -312,22 +319,19 @@ async def on_autopost_error(exception):
     f"Server count error due to {exception}"
   )
 
-async def update_database():
-  print("Update started")
-  for g in client.guilds:
-    g_id = str(g.id)
-    
-    try:
-      Database.select(g_id)
-    except psycopg2.ProgrammingError as e:
-      Database.insert(Bean(g_id))
+async def update_database(g_id):
+  if not Database.select(g_id):
+    Database.insert(Bean(g_id))
 
-  print("Database updated")
+# @tasks.loop(minutes = 10)
+# async def call_update_database():
+#   print("Update started")
 
+#   for g in client.guilds:
+#     g_id = str(g.id)
+#     await update_database(g_id)
 
-@tasks.loop(minutes = 10)
-async def call_update_database():
-  await update_database()
+#   print("Database updated")
 
 my_secret = os.environ['DISCORD_TOKEN']
 

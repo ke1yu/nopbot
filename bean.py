@@ -10,7 +10,8 @@ class Bean:
 		self.no_notice_vc = []
 		self.alert_channel = {}
 		self.name_notice = True
-		self.language  = Lang.EN
+		self.threshold = Num.MAX_THRESHOLD
+		self.language = Lang.EN
 	
 	def get_tuple(self):
 		return (
@@ -19,5 +20,6 @@ class Bean:
 			self.no_notice_vc,
 			json.dumps(self.alert_channel),
 			self.name_notice,
+			self.threshold,
 			self.language
 		)

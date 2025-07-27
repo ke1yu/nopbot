@@ -202,8 +202,8 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
     if interaction.guild:
       vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
       for vc in vcs:
-          if current.lower() in vc.name.lower():
-              choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
+        if current.lower() in vc.name.lower():
+          choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
 
   except psycopg2.DatabaseError as e:
     print("autocomplete_vc", e)

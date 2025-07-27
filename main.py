@@ -156,7 +156,7 @@ async def vc_notice_command(interaction, on_off: app_commands.Choice[str], chann
 async def send_here_command(interaction, vc: str):
   g_id = str(interaction.guild_id)
   await update_database(g_id)
-
+  
   try:
     g = Database.select(g_id)
 
@@ -188,6 +188,9 @@ async def send_here_command(interaction, vc: str):
 async def autocomplete_vc(interaction: discord.Interaction, current: str):
   g_id = str(interaction.guild_id)
   await update_database(g_id)
+
+  choices = [] 
+
   try:
     g = Database.select(g_id)
     
@@ -205,7 +208,6 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
               choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
 
   except psycopg2.DatabaseError as e:
-    choices = []
     print("autocomplete_vc", e)
 
   return choices[:25]

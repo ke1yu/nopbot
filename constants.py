@@ -24,6 +24,7 @@ class Str_Dict_Keys:
   ALERT_NAME_LEAVE = "alert_name_leave"
   MY_NOTICE = "my_notice"
   SEND_HERE = "send_here"
+  BRACKET = "bracket"
   LANG_CHANGED = "lang_changed"
   VC_CHANGED = "vc_changed"
   NOTICE_TYPE_CHANGED = "notice_type_changed"

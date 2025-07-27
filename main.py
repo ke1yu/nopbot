@@ -182,8 +182,9 @@ async def send_here_command(interaction, vc: str):
         Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
         ch_name = get_locale(lang, Str_Dict_Keys.BRACKET, interaction.guild.get_channel(int(channel_id)).name)
+        text_name = get_locale(lang, Str_Dict_Keys.BRACKET, interaction.channel.name)
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, ch_name, interaction.channel.name))
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, ch_name, text_name))
 
     else:
       await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)

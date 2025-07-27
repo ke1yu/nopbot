@@ -21,7 +21,7 @@ class Database:
     def insert(cls, bean):
         bean_tuple = bean.get_tuple()
         placeholders = ", ".join(["%s"] * len(bean_tuple))
-
+        
         with psycopg2.connect(cls.DATABASE_URL) as conn:
             with conn.cursor() as cur:
                 cur.execute(

@@ -1,3 +1,4 @@
+import json
 from lingual import Lang
 from constants import Num
 
@@ -17,7 +18,7 @@ class Bean:
 			self.guild_id,
 			self.no_notice_member,
 			self.no_notice_vc,
-			self.alert_channel,
+			json.dumps(self.alert_channel),
 			self.name_notice,
 			self.threshold,
 			self.language

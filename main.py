@@ -188,7 +188,7 @@ async def send_here_command(interaction, vc: str):
 async def autocomplete_vc(interaction: discord.Interaction, current: str):
   g_id = str(interaction.guild_id)
   await update_database(g_id)
-
+  print("00000")
   choices = [
     app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.ALL), value=Str_Dict_Keys.ALL),
     app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)
@@ -196,15 +196,17 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
 
   try:
     g = Database.select(g_id)
-    
-    lang = g[Db_Keys.LANGUAGE]
+    print("11111")
 
+    lang = g[Db_Keys.LANGUAGE]
+    print("xxxxxx")
     if interaction.guild:
       vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
+      print("33333")
       for vc in vcs:
         if current.lower() in vc.name.lower():
           choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
-
+  
   except psycopg2.DatabaseError as e:
     print("autocomplete_vc", e)
 

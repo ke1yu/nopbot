@@ -40,7 +40,7 @@ client = MyClient(intents=intents)
 @client.event
 async def on_voice_state_update(member, before, after):
   g_id = str(member.guild.id)
-  update_database(g_id)
+  await update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -89,7 +89,7 @@ async def on_voice_state_update(member, before, after):
 ])
 async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
-  update_database(g_id)
+  await update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -121,7 +121,7 @@ async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
 ])
 async def vc_notice_command(interaction, on_off: app_commands.Choice[str], channel: discord.VoiceChannel | discord.StageChannel):
   g_id = str(interaction.guild_id)
-  update_database(g_id)
+  await update_database(g_id)
   
   try:
     g = Database.select(g_id)
@@ -154,7 +154,7 @@ async def vc_notice_command(interaction, on_off: app_commands.Choice[str], chann
 @client.tree.command(name="sendherenop", description="Notifications of selected VC will be on the text channel where this command is entered.")
 async def send_here_command(interaction, vc: str):
   g_id = str(interaction.guild_id)
-  update_database(g_id)
+  await update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -186,7 +186,7 @@ async def send_here_command(interaction, vc: str):
 @send_here_command.autocomplete("vc")
 async def autocomplete_vc(interaction: discord.Interaction, current: str):
   g_id = str(interaction.guild_id)
-  update_database(g_id)
+  await update_database(g_id)
   try:
     g = Database.select(g_id)
     
@@ -216,7 +216,7 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
 ])
 async def notice_type_command(interaction, display_name: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
-  update_database(g_id)
+  await update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -245,7 +245,7 @@ async def notice_type_command(interaction, display_name: app_commands.Choice[str
 ])
 async def lang_command(interaction, language: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
-  update_database(g_id)
+  await update_database(g_id)
 
   try:
     g = Database.select(g_id)
@@ -264,7 +264,7 @@ async def lang_command(interaction, language: app_commands.Choice[str]):
 @client.tree.command(name="helpnop", description="Display help.")
 async def help_command(interaction):
   g_id = str(interaction.guild_id)
-  update_database(g_id)
+  await update_database(g_id)
 
   try:
     lang = Database.select(g_id)[Db_Keys.LANGUAGE]
@@ -293,7 +293,7 @@ async def on_guild_remove(guild):
 async def on_member_remove(member):
   if member:
     g_id = str(member.guild.id)
-    update_database(g_id)
+    await update_database(g_id)
 
     try:
       g = Database.select(g_id)

@@ -23,7 +23,7 @@ def get_locale(language, key, *args):
       Str_Dict_Keys.HELP_LANG : '言語を切り替えます（管理者限定）。\nSwitch languages. Administrator permissons are required.'
     },
     Lang.EN : {
-      Str_Dict_Keys.DEFAULT : 'All VCs',
+      Str_Dict_Keys.ALL : 'All VCs',
       Str_Dict_Keys.DEFAULT : 'Unspecified VCs',
       Str_Dict_Keys.ALERT : '{} in \"{}\"',
       Str_Dict_Keys.ALERT_NAME_JOIN : '{} has joined \"{}\": {} in total',

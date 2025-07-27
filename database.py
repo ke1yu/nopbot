@@ -1,6 +1,7 @@
 import psycopg2
 import psycopg2.extras
 import os
+import json
 from constants import DB_SETTING
 
 class Database:
@@ -31,6 +32,8 @@ class Database:
 
     @classmethod
     def update(cls, guild_id, col, value):
+        if isinstance(value, dict):
+            value = json.dumps(value)
         with psycopg2.connect(cls.DATABASE_URL) as conn:
             with conn.cursor() as cur:
                 cur.execute(

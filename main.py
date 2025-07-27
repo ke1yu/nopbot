@@ -294,7 +294,7 @@ async def on_member_remove(member):
   if member:
     g_id = str(member.guild.id)
     update_database(g_id)
-    
+
     try:
       g = Database.select(g_id)
 
@@ -320,6 +320,7 @@ async def on_autopost_error(exception):
   )
 
 async def update_database(g_id):
+  print("update_database", Database.select(g_id))
   if not Database.select(g_id):
     Database.insert(Bean(g_id))
 

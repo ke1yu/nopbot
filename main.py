@@ -193,10 +193,10 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
     app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.ALL), value=Str_Dict_Keys.ALL),
     app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)
   ]
-
+  print("11111")
   try:
     g = Database.select(g_id)
-    print("11111")
+    print("22222")
 
     lang = g[Db_Keys.LANGUAGE]
     print("xxxxxx")
@@ -206,7 +206,7 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
       for vc in vcs:
         if current.lower() in vc.name.lower():
           choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
-  
+
   except psycopg2.DatabaseError as e:
     print("autocomplete_vc", e)
 

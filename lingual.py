@@ -3,7 +3,8 @@ from constants import Lang, Str_Dict_Keys
 def get_locale(language, key, *args):
   string_dict = {
     Lang.JP : {
-      Str_Dict_Keys.DEFAULT : '全ボイスチャンネル',
+      Str_Dict_Keys.ALL : '全ボイスチャンネル',
+      Str_Dict_Keys.DEFAULT : '設定されていないボイスチャンネル',
       Str_Dict_Keys.ALERT : '【{}】：{}人',
       Str_Dict_Keys.ALERT_NAME_JOIN : '{}が【{}】に入室しました：{}人',
       Str_Dict_Keys.ALERT_NAME_LEAVE : '{}が【{}】から退室しました：{}人',
@@ -22,7 +23,8 @@ def get_locale(language, key, *args):
       Str_Dict_Keys.HELP_LANG : '言語を切り替えます（管理者限定）。\nSwitch languages. Administrator permissons are required.'
     },
     Lang.EN : {
-      Str_Dict_Keys.DEFAULT : 'All VC',
+      Str_Dict_Keys.DEFAULT : 'All VCs',
+      Str_Dict_Keys.DEFAULT : 'Unspecified VCs',
       Str_Dict_Keys.ALERT : '{} in \"{}\"',
       Str_Dict_Keys.ALERT_NAME_JOIN : '{} has joined \"{}\": {} in total',
       Str_Dict_Keys.ALERT_NAME_LEAVE : '{} has left \"{}\": {} in total',

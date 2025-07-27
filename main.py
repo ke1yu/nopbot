@@ -164,18 +164,18 @@ async def send_here_command(interaction, vc: str):
 
     if interaction.permissions.administrator:
       channel_id = str(interaction.channel_id)
-      if vc in [Str_Dict_Keys.ALL, Str_Dict_Keys.DEFAULT]:
+      if vc == Str_Dict_Keys.ALL | vc == Str_Dict_Keys.DEFAULT:
         if vc == Str_Dict_Keys.ALL:
           g[Db_Keys.ALERT_CHANNEL].clear()
         g[Db_Keys.ALERT_CHANNEL][Str_Dict_Keys.DEFAULT] = channel_id
         Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, Str_Dict_Keys.DEFAULT)))
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, get_locale(lang, Str_Dict_Keys.DEFAULT), interaction.channel.name)))
       else:
         g[Db_Keys.ALERT_CHANNEL][vc] = channel_id
         Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc)))
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc, interaction.channel.name)))
 
     else:
       await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)

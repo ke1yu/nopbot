@@ -164,7 +164,7 @@ async def send_here_command(interaction, vc: str):
 
     if interaction.permissions.administrator:
       channel_id = str(interaction.channel_id)
-      if vc == Str_Dict_Keys.ALL | vc == Str_Dict_Keys.DEFAULT:
+      if vc in [Str_Dict_Keys.ALL, Str_Dict_Keys.DEFAULT]:
         if vc == Str_Dict_Keys.ALL:
           g[Db_Keys.ALERT_CHANNEL].clear()
         g[Db_Keys.ALERT_CHANNEL][Str_Dict_Keys.DEFAULT] = channel_id

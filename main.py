@@ -190,7 +190,7 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
 
   await update_database(g_id)
   
-  print("00000")
+  choices = []
 
   try:
     g = Database.select(g_id)
@@ -199,15 +199,10 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
       app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.ALL), value=Str_Dict_Keys.ALL),
       app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)
     ]
-  except Exception as e:
-    print("11111", e)
-  
-  try:
-    print("22222")
 
     if interaction.guild:
       vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
-      print("33333")
+
       for vc in vcs:
         if current.lower() in vc.name.lower():
           choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))

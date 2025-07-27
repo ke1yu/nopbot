@@ -169,20 +169,21 @@ async def send_here_command(interaction, vc: str):
 
     if interaction.permissions.administrator:
       channel_id = str(interaction.channel_id)
+      text_name = get_locale(lang, Str_Dict_Keys.BRACKET, interaction.channel.name)
+
       if vc in [Str_Dict_Keys.ALL, Str_Dict_Keys.DEFAULT]:
         if vc == Str_Dict_Keys.ALL:
           g[Db_Keys.ALERT_CHANNEL].clear()
 
         g[Db_Keys.ALERT_CHANNEL][Str_Dict_Keys.DEFAULT] = channel_id
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc), interaction.channel.name))
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc), text_name))
 
       else:
         g[Db_Keys.ALERT_CHANNEL][vc] = channel_id
         Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
         ch_name = get_locale(lang, Str_Dict_Keys.BRACKET, interaction.guild.get_channel(int(vc)).name)
-        text_name = get_locale(lang, Str_Dict_Keys.BRACKET, interaction.channel.name)
 
         await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, ch_name, text_name))
 

@@ -11,24 +11,20 @@ class Db_Keys:
   NO_NOTICE_VC = "no_notice_vc"
   ALERT_CHANNEL = "alert_channel"
   NAME_NOTICE = "name_notice"
+  THRESHOLD = "threshold"
   LANGUAGE = "language"
-
-
-# language
-@dataclasses.dataclass(frozen=True)
-class Lang:
-  JP = "jp"
-  EN = "en"
 
 # string dict keys
 @dataclasses.dataclass(frozen=True)
 class Str_Dict_Keys:
+  ALL = "__all__"
   DEFAULT = "__default__"
   ALERT = "alert"
   ALERT_NAME_JOIN = "alert_name_join"
   ALERT_NAME_LEAVE = "alert_name_leave"
   MY_NOTICE = "my_notice"
   SEND_HERE = "send_here"
+  BRACKET = "bracket"
   LANG_CHANGED = "lang_changed"
   VC_CHANGED = "vc_changed"
   NOTICE_TYPE_CHANGED = "notice_type_changed"
@@ -40,3 +36,21 @@ class Str_Dict_Keys:
   HELP_SEND_HERE = "help_send_here"
   HELP_NOTIFY_NAME = "help_notify_name"
   HELP_LANG = "help_lang"
+
+
+# language
+@dataclasses.dataclass(frozen=True)
+class Lang:
+  JP = "jp"
+  EN = "en"
+
+# numbers
+@dataclasses.dataclass(frozen=True)
+class Num:
+  MAX_THRESHOLD = 250000
+
+# on_off
+@dataclasses.dataclass(frozen=True)
+class On_Off:
+  On = "ON"
+  Off = "OFF"

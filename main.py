@@ -184,31 +184,43 @@ async def send_here_command(interaction, vc: str):
     print("send_here_command", e)
 
 
+# @send_here_command.autocomplete("vc")
+# async def autocomplete_vc(interaction: discord.Interaction, current: str):
+#   g_id = str(interaction.guild_id)
+#   await update_database(g_id)
+
+#   choices = [
+#     app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.ALL), value=Str_Dict_Keys.ALL),
+#     app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)
+#   ]
+
+#   try:
+#     g = Database.select(g_id)
+    
+#     lang = g[Db_Keys.LANGUAGE]
+
+#     if interaction.guild:
+#       vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
+#       for vc in vcs:
+#         if current.lower() in vc.name.lower():
+#           choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
+
+#   except psycopg2.DatabaseError as e:
+#     print("autocomplete_vc", e)
+
+#   return choices[:25]
+
 @send_here_command.autocomplete("vc")
 async def autocomplete_vc(interaction: discord.Interaction, current: str):
-  g_id = str(interaction.guild_id)
-  await update_database(g_id)
-
-  choices = [
-    app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.ALL), value=Str_Dict_Keys.ALL),
-    app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.DEFAULT), value=Str_Dict_Keys.DEFAULT)
-  ]
-
   try:
-    g = Database.select(g_id)
-    
-    lang = g[Db_Keys.LANGUAGE]
-
-    if interaction.guild:
-      vcs = interaction.guild.voice_channels + interaction.guild.stage_channels
-      for vc in vcs:
-        if current.lower() in vc.name.lower():
-          choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
-
-  except psycopg2.DatabaseError as e:
-    print("autocomplete_vc", e)
-
-  return choices[:25]
+    choices = [
+      app_commands.Choice(name="一般", value="1229963524470739045"),
+      app_commands.Choice(name="All", value="all"),
+    ]
+    return choices
+  except Exception as e:
+    print("autocomplete_vc error:", e)
+    return []
 
 @client.tree.command(name="notifynamenop", description="Turn display of user names in notifications on/off.")
 @app_commands.choices(display_name=[

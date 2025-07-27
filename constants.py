@@ -47,3 +47,9 @@ class Lang:
 @dataclasses.dataclass(frozen=True)
 class Num:
   MAX_THRESHOLD = 250000
+
+# on_off
+@dataclasses.dataclass(frozen=True)
+class On_Off:
+  On = "ON"
+  Off = "OFF"

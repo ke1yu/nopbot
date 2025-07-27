@@ -6,8 +6,9 @@ from discord import app_commands
 import topgg
 import dataclasses
 import os
+import sys
 import psycopg2
-from constants import DB_SETTING, Db_Keys, Str_Dict_Keys, Lang, Num
+from constants import DB_SETTING, Db_Keys, Str_Dict_Keys, Lang, On_Off
 from lingual import get_locale
 from help import EmbedHelp
 from bean import Bean
@@ -79,13 +80,13 @@ async def on_voice_state_update(member, before, after):
                               member.display_name, channel.name, len(channel.members))
               await alert_channel.send(msg)
 
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("on_voice_state_update", e)
 
 @client.tree.command(name="mynoticenop", description="Turn on/off notifications about your entry and exit.")
 @app_commands.choices(on_off=[
-  app_commands.Choice(name="On", value="on"),
-  app_commands.Choice(name="Off", value="off")
+  app_commands.Choice(name=On_Off.On, value=On_Off.On),
+  app_commands.Choice(name=On_Off.Off, value=On_Off.Off)
 ])
 async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
@@ -96,28 +97,28 @@ async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
 
     lang = g[Db_Keys.LANGUAGE]
     i_user_id = str(interaction.user.id)
-    if on_off.value == 'on':
+    if on_off.value == On_Off.On:
       if i_user_id in g[Db_Keys.NO_NOTICE_MEMBER]:
         g[Db_Keys.NO_NOTICE_MEMBER].remove(i_user_id)
         Database.update(g_id, Db_Keys.NO_NOTICE_MEMBER, g[Db_Keys.NO_NOTICE_MEMBER])
 
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, 'ON'), ephemeral=True)
+      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, On_Off.On), ephemeral=True)
 
-    elif on_off.value == 'off':
+    elif on_off.value == On_Off.Off:
       if i_user_id not in g[Db_Keys.NO_NOTICE_MEMBER]:
         g[Db_Keys.NO_NOTICE_MEMBER].append(i_user_id)
         Database.update(g_id, Db_Keys.NO_NOTICE_MEMBER, g[Db_Keys.NO_NOTICE_MEMBER])
 
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, 'OFF'), ephemeral=True)
+      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, On_Off.Off), ephemeral=True)
   
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("my_notice_command", e)
 
 
 @client.tree.command(name="vcnoticenop", description="Select the voice or stage channel to turn notifications on/off.")
 @app_commands.choices(on_off=[
-  app_commands.Choice(name="On", value="on"),
-  app_commands.Choice(name="Off", value="off")
+  app_commands.Choice(name=On_Off.On, value=On_Off.On),
+  app_commands.Choice(name=On_Off.Off, value=On_Off.Off)
 ])
 async def vc_notice_command(interaction, on_off: app_commands.Choice[str], channel: discord.VoiceChannel | discord.StageChannel):
   g_id = str(interaction.guild_id)
@@ -130,25 +131,25 @@ async def vc_notice_command(interaction, on_off: app_commands.Choice[str], chann
     if interaction.permissions.administrator:
       if channel:
         channel_id = str(channel.id)
-        if on_off.value == 'on':
+        if on_off.value == On_Off.On:
           if channel_id in g[Db_Keys.NO_NOTICE_VC]:
             g[Db_Keys.NO_NOTICE_VC].remove(channel_id)
             Database.update(g_id, Db_Keys.NO_NOTICE_VC, g[Db_Keys.NO_NOTICE_VC])
 
-          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, 'ON'))
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, On_Off.On))
 
-        elif on_off.value == 'off':
+        elif on_off.value == On_Off.Off:
           if channel_id not in g[Db_Keys.NO_NOTICE_VC]:
             g[Db_Keys.NO_NOTICE_VC].append(channel_id)
             Database.update(g_id, Db_Keys.NO_NOTICE_VC, g[Db_Keys.NO_NOTICE_VC])
 
-          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, 'OFF'))
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, On_Off.Off))
       else:
         await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_CHANNEL), ephemeral=True)
     else:
       await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
       
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("vc_notice_command", e)
 
 @client.tree.command(name="sendherenop", description="Notifications of selected VC will be on the text channel where this command is entered.")
@@ -179,7 +180,7 @@ async def send_here_command(interaction, vc: str):
     else:
       await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
 
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("send_here_command", e)
 
 
@@ -203,7 +204,7 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
           if current.lower() in vc.name.lower():
               choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
 
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     choices = []
     print("autocomplete_vc", e)
 
@@ -211,8 +212,8 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
 
 @client.tree.command(name="notifynamenop", description="Turn display of user names in notifications on/off.")
 @app_commands.choices(display_name=[
-  app_commands.Choice(name="On", value="on"),
-  app_commands.Choice(name="Off", value="off")
+  app_commands.Choice(name=On_Off.On, value=On_Off.On),
+  app_commands.Choice(name=On_Off.Off, value=On_Off.Off)
 ])
 async def notice_type_command(interaction, display_name: app_commands.Choice[str]):
   g_id = str(interaction.guild_id)
@@ -223,19 +224,19 @@ async def notice_type_command(interaction, display_name: app_commands.Choice[str
 
     lang = g[Db_Keys.LANGUAGE]
     if interaction.permissions.administrator:
-      if display_name.value == "on":
+      if display_name.value == On_Off.On:
         g[Db_Keys.NAME_NOTICE] = True
         Database.update(g_id, Db_Keys.NAME_NOTICE, g[Db_Keys.NAME_NOTICE])
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, 'ON'))
-      elif display_name.value == "off":
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, On_Off.On))
+      elif display_name.value == On_Off.Off:
         g[Db_Keys.NAME_NOTICE] = False
         Database.update(g_id, Db_Keys.NAME_NOTICE, g[Db_Keys.NAME_NOTICE])
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, 'OFF'))
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, On_Off.Off))
     else:
       await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("notice_type_command", e)
 
 @client.tree.command(name="langnop", description="Switch languages.")
@@ -258,7 +259,7 @@ async def lang_command(interaction, language: app_commands.Choice[str]):
     
     else:
       await interaction.response.send_message(get_locale(g[Db_Keys.LANGUAGE], Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("lang_command", e)
 
 @client.tree.command(name="helpnop", description="Display help.")
@@ -270,14 +271,14 @@ async def help_command(interaction):
     lang = Database.select(g_id)[Db_Keys.LANGUAGE]
 
     await interaction.response.send_message(embed=EmbedHelp(lang), ephemeral=True)
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("help_command", e)
 
 @client.event
 async def on_guild_join(guild):
   try:
     Database.insert(Bean(str(guild.id)))
-  except psycopg2.ProgrammingError as e:
+  except psycopg2.DatabaseError as e:
     print("on_guild_join", e)
 
 @client.event
@@ -286,7 +287,7 @@ async def on_guild_remove(guild):
     g_id = str(guild.id)
     try:
       Database.delete(g_id)
-    except psycopg2.ProgrammingError as e:
+    except psycopg2.DatabaseError as e:
       print("on_guild_remove", e)
 
 @client.event
@@ -303,7 +304,7 @@ async def on_member_remove(member):
         g[Db_Keys.NO_NOTICE_MEMBER].remove(member_id)
 
         Database.update(g_id, Db_Keys.NO_NOTICE_MEMBER, g[Db_Keys.NO_NOTICE_MEMBER])
-    except psycopg2.ProgrammingError as e:
+    except psycopg2.DatabaseError as e:
       print("on_member_remove", e)
 
 
@@ -320,7 +321,6 @@ async def on_autopost_error(exception):
   )
 
 async def update_database(g_id):
-  print("update_database", Database.select(g_id))
   if not Database.select(g_id):
     Database.insert(Bean(g_id))
 
@@ -336,9 +336,4 @@ async def update_database(g_id):
 
 my_secret = os.environ['DISCORD_TOKEN']
 
-try:
-  client.run(my_secret)
-except discord.errors.HTTPException:
-  print("\n\n\nBLOCKED BY RATE LIMITS\nRESTARTING NOW\n\n\n")
-  os.system("python restarter.py")
-  os.system('kill 1')
+client.run(my_secret)

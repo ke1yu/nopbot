@@ -63,17 +63,26 @@ async def on_voice_state_update(member, before, after):
             key = Str_Dict_Keys.ALERT_NAME_LEAVE
             
             channel_id = str(channel.id)
+
             if (str(member.id) not in g[Db_Keys.NO_NOTICE_MEMBER]) and (channel_id not in g[Db_Keys.NO_NOTICE_VC]):
-              alert_channel = member.guild.system_channel or member.guild.text_channels[0]
-              print("000")
               if channel_id in g[Db_Keys.ALERT_CHANNEL]:
-                print("111")
-                alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == g[Db_Keys.ALERT_CHANNEL][channel_id]]
-                if alert_channel_list:
-                  print("222")
-                  alert_channel = alert_channel_list[0]
+                text_id = g[Db_Keys.ALERT_CHANNEL][channel_id]
+
+              elif Str_Dict_Keys.DEFAULT in g[Db_Keys.ALERT_CHANNEL]:
+                text_id = g[Db_Keys.ALERT_CHANNEL][Str_Dict_Keys.DEFAULT]
+              
+              else:
+                text_id = ""
+
+              alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == text_id]
+              
+              if alert_channel_list:
+                alert_channel = alert_channel_list[0]
+              else:
+                alert_channel = member.guild.system_channel or member.guild.text_channels[0]
+
               msg = get_locale(lang, key if name_notice else Str_Dict_Keys.ALERT,
-                              member.display_name, channel.name, len(channel.members))
+                member.display_name, channel.name, len(channel.members))
               await alert_channel.send(msg)
 
   except psycopg2.DatabaseError as e:

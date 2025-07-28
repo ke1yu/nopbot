@@ -45,9 +45,10 @@ async def on_voice_state_update(member, before, after):
 
   try:
     g = Database.select(g_id)
+    no_notice_member = g.get(Db_Keys.NO_NOTICE_MEMBER) or []
 
     if member:
-      if str(member.id) not in g[Db_Keys.NO_NOTICE_MEMBER]:
+      if str(member.id) not in no_notice_member:
         lang = g[Db_Keys.LANGUAGE]
         name_notice = g[Db_Keys.NAME_NOTICE]
 
@@ -85,7 +86,7 @@ async def on_voice_state_update(member, before, after):
 
               for k in keys_to_remove:
                 del g[Db_Keys.ALERT_CHANNEL][k]
-                
+
               Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
               # フォールバックチャンネル

@@ -74,12 +74,29 @@ async def on_voice_state_update(member, before, after):
             else:
               text_id = ""
 
-            alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == text_id]
-            
-            if alert_channel_list:
-              alert_channel = alert_channel_list[0]
+            # 存在するテキストチャンネルのID一覧
+            valid_text_ids = [str(ch.id) for ch in member.guild.text_channels]
+
+            if text_id in valid_text_ids:
+              alert_channel = discord.utils.get(member.guild.text_channels, id=int(text_id))
             else:
+              # ALERT_CHANNEL の中に無効な ID が含まれているので削除（クリーンアップ）
+              keys_to_remove = [k for k, v in g[Db_Keys.ALERT_CHANNEL].items() if v == text_id]
+
+              for k in keys_to_remove:
+                del g[Db_Keys.ALERT_CHANNEL][k]
+                
+              Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
+
+              # フォールバックチャンネル
               alert_channel = member.guild.system_channel or member.guild.text_channels[0]
+
+            # alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == text_id]
+            
+            # if alert_channel_list:
+            #   alert_channel = alert_channel_list[0]
+            # else:
+            #   alert_channel = member.guild.system_channel or member.guild.text_channels[0]
 
             msg = get_locale(lang, key if name_notice else Str_Dict_Keys.ALERT,
               member.display_name, channel.name, len(channel.members))

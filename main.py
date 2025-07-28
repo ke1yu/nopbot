@@ -176,6 +176,7 @@ async def send_here_command(interaction, vc: str):
           g[Db_Keys.ALERT_CHANNEL].clear()
 
         g[Db_Keys.ALERT_CHANNEL][Str_Dict_Keys.DEFAULT] = channel_id
+        Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
         await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc), text_name))
 
@@ -215,7 +216,7 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
 
       for vc in vcs:
         if current.lower() in vc.name.lower():
-          choices.append(app_commands.Choice(name=vc.name, value=str(vc.id)))
+          choices.append(app_commands.Choice(name=get_locale(lang, Str_Dict_Keys.BRACKET, vc.name), value=str(vc.id)))
 
   except psycopg2.DatabaseError as e:
     print("autocomplete_vc", e)

@@ -31,6 +31,7 @@ class Str_Dict_Keys:
   NOT_INTEGER = "not_integer"
   NO_CHANNEL = "no_channel"
   NO_PERMISSIONS = "no_permissions"
+  NO_MSG_PERMISSIONS = "no_msg_permissions"
   HELP_MY_NOTICE = "help_my_notice"
   HELP_VC_NOTICE = "help_vc_notice"
   HELP_SEND_HERE = "help_send_here"

@@ -217,7 +217,11 @@ async def send_here_command(interaction, vc: str):
         g[Db_Keys.ALERT_CHANNEL][vc] = channel_id
         Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
-        ch_name = get_locale(lang, Str_Dict_Keys.BRACKET, interaction.guild.get_channel(int(vc)).name)
+        try:
+          ch = interaction.guild.get_channel(int(vc))
+          ch_name = get_locale(lang, Str_Dict_Keys.BRACKET, ch.name)
+        except (ValueError, AttributeError):
+          ch_name = vc  # もしくはデフォルト名を使う
 
         if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
           await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, ch_name, text_name))

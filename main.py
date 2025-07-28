@@ -74,16 +74,41 @@ async def on_voice_state_update(member, before, after):
             else:
               text_id = ""
 
-            alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == text_id]
-            
-            if alert_channel_list:
-              alert_channel = alert_channel_list[0]
+            # 存在するテキストチャンネルのID一覧
+            valid_text_ids = [str(ch.id) for ch in member.guild.text_channels]
+
+            if text_id in valid_text_ids:
+              alert_channel = discord.utils.get(member.guild.text_channels, id=int(text_id))
             else:
+              # ALERT_CHANNEL の中に無効な ID が含まれているので削除（クリーンアップ）
+              keys_to_remove = [k for k, v in g[Db_Keys.ALERT_CHANNEL].items() if v == text_id]
+
+              for k in keys_to_remove:
+                del g[Db_Keys.ALERT_CHANNEL][k]
+                
+              Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
+
+              # フォールバックチャンネル
               alert_channel = member.guild.system_channel or member.guild.text_channels[0]
+
+            # alert_channel_list = [ch for ch in member.guild.text_channels if str(ch.id) == text_id]
+            
+            # if alert_channel_list:
+            #   alert_channel = alert_channel_list[0]
+            # else:
+            #   alert_channel = member.guild.system_channel or member.guild.text_channels[0]
 
             msg = get_locale(lang, key if name_notice else Str_Dict_Keys.ALERT,
               member.display_name, channel.name, len(channel.members))
-            await alert_channel.send(msg)
+            
+            if name_notice:
+              msg = get_locale(lang, key, member.display_name, channel.name, len(channel.members))
+            
+            else:
+              msg = get_locale(lang, Str_Dict_Keys.ALERT, channel.name, len(channel.members))
+            
+            if alert_channel.permissions_for(alert_channel.guild.me).send_messages:
+              await alert_channel.send(msg)
 
   except psycopg2.DatabaseError as e:
     print("on_voice_state_update", e)
@@ -107,14 +132,16 @@ async def my_notice_command(interaction, on_off: app_commands.Choice[str]):
         g[Db_Keys.NO_NOTICE_MEMBER].remove(i_user_id)
         Database.update(g_id, Db_Keys.NO_NOTICE_MEMBER, g[Db_Keys.NO_NOTICE_MEMBER])
 
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, On_Off.On), ephemeral=True)
+      if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, On_Off.On), ephemeral=True)
 
     elif on_off.value == On_Off.Off:
       if i_user_id not in g[Db_Keys.NO_NOTICE_MEMBER]:
         g[Db_Keys.NO_NOTICE_MEMBER].append(i_user_id)
         Database.update(g_id, Db_Keys.NO_NOTICE_MEMBER, g[Db_Keys.NO_NOTICE_MEMBER])
 
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, On_Off.Off), ephemeral=True)
+      if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.MY_NOTICE, i_user_id, On_Off.Off), ephemeral=True)
   
   except psycopg2.DatabaseError as e:
     print("my_notice_command", e)
@@ -141,18 +168,22 @@ async def vc_notice_command(interaction, on_off: app_commands.Choice[str], chann
             g[Db_Keys.NO_NOTICE_VC].remove(channel_id)
             Database.update(g_id, Db_Keys.NO_NOTICE_VC, g[Db_Keys.NO_NOTICE_VC])
 
-          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, On_Off.On))
+          if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+            await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, On_Off.On))
 
         elif on_off.value == On_Off.Off:
           if channel_id not in g[Db_Keys.NO_NOTICE_VC]:
             g[Db_Keys.NO_NOTICE_VC].append(channel_id)
             Database.update(g_id, Db_Keys.NO_NOTICE_VC, g[Db_Keys.NO_NOTICE_VC])
 
-          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, On_Off.Off))
+          if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+            await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.VC_CHANGED, channel.name, On_Off.Off))
       else:
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_CHANNEL), ephemeral=True)
+        if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_CHANNEL), ephemeral=True)
     else:
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
+      if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
       
   except psycopg2.DatabaseError as e:
     print("vc_notice_command", e)
@@ -178,7 +209,8 @@ async def send_here_command(interaction, vc: str):
         g[Db_Keys.ALERT_CHANNEL][Str_Dict_Keys.DEFAULT] = channel_id
         Database.update(g_id, Db_Keys.ALERT_CHANNEL, g[Db_Keys.ALERT_CHANNEL])
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc), text_name))
+        if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, get_locale(lang, vc), text_name))
 
       else:
         g[Db_Keys.ALERT_CHANNEL][vc] = channel_id
@@ -186,10 +218,12 @@ async def send_here_command(interaction, vc: str):
 
         ch_name = get_locale(lang, Str_Dict_Keys.BRACKET, interaction.guild.get_channel(int(vc)).name)
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, ch_name, text_name))
+        if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.SEND_HERE, ch_name, text_name))
 
     else:
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
+      if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
 
   except psycopg2.DatabaseError as e:
     print("send_here_command", e)
@@ -200,8 +234,6 @@ async def autocomplete_vc(interaction: discord.Interaction, current: str):
   g_id = str(interaction.guild_id)
 
   await update_database(g_id)
-  
-  choices = []
 
   try:
     g = Database.select(g_id)
@@ -241,14 +273,18 @@ async def notice_type_command(interaction, display_name: app_commands.Choice[str
         g[Db_Keys.NAME_NOTICE] = True
         Database.update(g_id, Db_Keys.NAME_NOTICE, g[Db_Keys.NAME_NOTICE])
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, On_Off.On))
+        if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, On_Off.On))
       elif display_name.value == On_Off.Off:
         g[Db_Keys.NAME_NOTICE] = False
         Database.update(g_id, Db_Keys.NAME_NOTICE, g[Db_Keys.NAME_NOTICE])
 
-        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, On_Off.Off))
+        if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+          await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NOTICE_TYPE_CHANGED, On_Off.Off))
     else:
-      await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
+      if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+        await interaction.response.send_message(get_locale(lang, Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
+
   except psycopg2.DatabaseError as e:
     print("notice_type_command", e)
 
@@ -268,10 +304,12 @@ async def lang_command(interaction, language: app_commands.Choice[str]):
       g[Db_Keys.LANGUAGE] = language.value
       Database.update(g_id, Db_Keys.LANGUAGE, g[Db_Keys.LANGUAGE])
 
-      await interaction.response.send_message(get_locale(language.value, Str_Dict_Keys.LANG_CHANGED, interaction.channel.name))
+      if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+        await interaction.response.send_message(get_locale(language.value, Str_Dict_Keys.LANG_CHANGED, interaction.channel.name))
     
     else:
-      await interaction.response.send_message(get_locale(g[Db_Keys.LANGUAGE], Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
+      if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+        await interaction.response.send_message(get_locale(g[Db_Keys.LANGUAGE], Str_Dict_Keys.NO_PERMISSIONS), ephemeral=True)
   except psycopg2.DatabaseError as e:
     print("lang_command", e)
 
@@ -283,7 +321,8 @@ async def help_command(interaction):
   try:
     lang = Database.select(g_id)[Db_Keys.LANGUAGE]
 
-    await interaction.response.send_message(embed=EmbedHelp(lang), ephemeral=True)
+    if interaction.channel.permissions_for(interaction.channel.guild.me).send_messages:
+      await interaction.response.send_message(embed=EmbedHelp(lang), ephemeral=True)
   except psycopg2.DatabaseError as e:
     print("help_command", e)
 

@@ -393,4 +393,10 @@ async def update_database(g_id):
 
 my_secret = os.environ['DISCORD_TOKEN']
 
+@client.event
+async def on_error(event, *args, **kwargs):
+    import traceback
+    print(f"An error occured in {event}:")
+    traceback.print_exc()
+
 client.run(my_secret)
